@@ -35,7 +35,6 @@ func main() {
 	defer conn.Close()
 	// 建立连接
 	client := pb.NewGreeterClient(conn)
-
 	// 执行RPC调用并打印收到的响应数据（这个方法在服务端实现并返回结果）
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
