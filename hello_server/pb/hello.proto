@@ -1,0 +1,27 @@
+// 版本声明，使用Protocol Buffers v3版本
+syntax = "proto3";
+
+// 这部分的内容是关于最后生成的 go 文件是处在哪个目录哪个包中
+// . 代表在当前目录生成
+// 以 ; 号间隔
+// service 代表了生成的 go 文件的包名是 service 
+option go_package = ".;pb";
+
+// 然后我们需要定义一个服务，在这个服务中需要有一个方法，这个方法可以接受客户端的参数，再返回服务端的响应
+// 其实很容易可以看出，我们定义了一个 service ，称为 Greeter ，这个服务中有一个 rpc 方法，名为 SayHello 
+// 这个方法会发送一个 HelloRequest ，然后返回一个 HelloResponse 
+service Greeter {
+    rpc SayHello (HelloRequest) returns (HelloResponse) {}
+}
+
+// message 关键字，其实你可以理解为 Golang 中的结构体
+// 这里比较特别的是变量后面的“赋值”
+// 这里并不是赋值，而是定义在这个 message 中的位置
+message HelloRequest {
+    string name = 1;    // 第一行就标识为 1
+    // int64 age = 2;   // 第二行就标识为 2
+}
+
+message HelloResponse {
+    string reply = 1;
+}
