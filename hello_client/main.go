@@ -17,7 +17,7 @@ import (
 
 const (
 	defaultName = "world"
-	cretFile    = "E:\\GoLanguage\\src\\gRPC" + "\\gRPC_study\\hello_server\\key\\test.pem" // 证书文件
+	cretFile    = "E:\\GoLanguage\\src\\gRPC" + "\\gRPC_study\\hello_client\\key\\test.pem" // 证书文件
 	defaultDNS  = "*.sanyewu.com"                                                           // openssl.cfg 文件中 [ alt_names ] 标签定义的 DSN
 )
 
