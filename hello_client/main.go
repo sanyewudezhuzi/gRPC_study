@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -42,5 +43,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to sayhello: %v", err)
 	}
-	log.Println(res.GetReply())
+	fmt.Println(res.GetReply())
 }
