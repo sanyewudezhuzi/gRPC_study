@@ -53,7 +53,7 @@ func main() {
 	// 连接到server端
 	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
+		log.Fatalln("failed to connect:", err)
 	}
 	defer conn.Close()
 	// 建立连接
