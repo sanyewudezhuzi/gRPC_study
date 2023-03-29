@@ -30,7 +30,7 @@ func runLotsOfReplies(c pb.GreeterClient) {
 	defer cancel()
 	stream, err := c.LotsOfReplies(ctx, &pb.HelloRequest{Name: *name})
 	if err != nil {
-		log.Fatalf("c.LotsOfReplies failed, err: %v", err)
+		log.Fatalln("failed to lotsofreplies:", err)
 	}
 	for {
 		// 接收服务端返回的流式数据，当收到io.EOF或错误时退出
@@ -39,7 +39,7 @@ func runLotsOfReplies(c pb.GreeterClient) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("c.LotsOfReplies failed, err: %v", err)
+			log.Fatalln("failed to recv:", err)
 		}
 		fmt.Println(res.GetReply())
 	}
@@ -51,7 +51,7 @@ func main() {
 	// 连接到server端
 	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
+		log.Fatalln("failed to connect:", err)
 	}
 	defer conn.Close()
 	// 建立连接
