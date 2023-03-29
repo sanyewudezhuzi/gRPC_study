@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/sanyewudezhuzi/gRPC_study/pb"
@@ -20,29 +20,31 @@ const (
 )
 
 var (
-	addr = flag.String("addr", "127.0.0.1:9090", "IP address and port number of the tcp connection")
-	name = flag.String("name", defaultName, "Name to greet")
+	addr  = flag.String("addr", "127.0.0.1:9090", "IP address and port number of the tcp connection")
+	names = flag.String("names", defaultName, "Names to greet")
 )
 
-func runLotsOfReplies(c pb.GreeterClient) {
-	// server端流式RPC
+func runLotsOfGreeting(c pb.GreeterClient) {
+	// 客户端流式RPC
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	stream, err := c.LotsOfReplies(ctx, &pb.HelloRequest{Name: *name})
+	stream, err := c.LotsOfGreetings(ctx)
 	if err != nil {
-		log.Fatalf("c.LotsOfReplies failed, err: %v", err)
+		log.Fatalln("failed to lotsofgreetings:", err)
 	}
-	for {
-		// 接收服务端返回的流式数据，当收到io.EOF或错误时退出
-		res, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
+	namelist := strings.Split(*names, ",")
+	for _, name := range namelist {
+		// 发送流式数据
+		err := stream.Send(&pb.HelloRequest{Name: name})
 		if err != nil {
-			log.Fatalf("c.LotsOfReplies failed, err: %v", err)
+			log.Fatalln("failed to send:", err)
 		}
-		fmt.Println(res.GetReply())
 	}
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalln("failed to closeandrecv:", err)
+	}
+	fmt.Println(res.GetReply())
 }
 
 func main() {
@@ -56,6 +58,6 @@ func main() {
 	defer conn.Close()
 	// 建立连接
 	client := pb.NewGreeterClient(conn)
-	// 客户端调用 LotsOfReplies 并将收到的数据依次打印出来
-	runLotsOfReplies(client)
+	// 客户端调用 LotsOfGreetings 方法，向服务端发送流式请求数据，接收返回值并打印
+	runLotsOfGreeting(client)
 }

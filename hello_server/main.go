@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 
 	"github.com/sanyewudezhuzi/gRPC_study/pb"
@@ -14,25 +15,24 @@ type server struct {
 	pb.UnimplementedGreeterServer
 }
 
-func (s *server) LotsOfReplies(req *pb.HelloRequest, stream pb.Greeter_LotsOfRepliesServer) error {
-	fmt.Println(req.GetName())
-	words := []string{
-		"你好 ",
-		"hello ",
-		"こんにちは ",
-		"안녕하세요 ",
-		"สวัสดี ",
-	}
-	for _, word := range words {
-		data := &pb.HelloResponse{
-			Reply: word + req.GetName(),
+// LotsOfGreetings 接收流式数据
+func (s *server) LotsOfGreetings(stream pb.Greeter_LotsOfGreetingsServer) error {
+	reply := "你好: "
+	for {
+		// 接收客户端发来的流式数据
+		res, err := stream.Recv()
+		if err == io.EOF {
+			// 最终统一回复
+			return stream.SendAndClose(&pb.HelloResponse{
+				Reply: reply,
+			})
 		}
-		// 使用 send 方法返回多个数据
-		if err := stream.Send(data); err != nil {
+		if err != nil {
 			return err
 		}
+		reply += res.GetName()
+		fmt.Println("res: ", res.GetName())
 	}
-	return nil
 }
 
 func main() {

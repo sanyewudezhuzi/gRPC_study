@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = ".;pb";
 
 service Greeter {
-    rpc LotsOfReplies(HelloRequest) returns (stream HelloResponse) {}
+    rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse) {}
 }
 
 message HelloRequest {
