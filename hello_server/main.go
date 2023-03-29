@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"log"
 	"net"
+	"strings"
 
 	"github.com/sanyewudezhuzi/gRPC_study/pb"
 	"google.golang.org/grpc"
@@ -15,23 +16,35 @@ type server struct {
 	pb.UnimplementedGreeterServer
 }
 
-// LotsOfGreetings 接收流式数据
-func (s *server) LotsOfGreetings(stream pb.Greeter_LotsOfGreetingsServer) error {
-	reply := "你好: "
+// 从隔壁大佬偷的价值连城的 AI 模型
+func aimodel(s string) string {
+	s = strings.ReplaceAll(s, "吗", "")
+	s = strings.ReplaceAll(s, "吧", "")
+	s = strings.ReplaceAll(s, "你", "我")
+	s = strings.ReplaceAll(s, "？", "!")
+	s = strings.ReplaceAll(s, "?", "!")
+	return s
+}
+
+// BidiHello 双向流式打招呼
+func (s *server) BidiHello(stream pb.Greeter_BidiHelloServer) error {
 	for {
-		// 接收客户端发来的流式数据
+		// 接收流式请求
 		res, err := stream.Recv()
-		if err == io.EOF {
-			// 最终统一回复
-			return stream.SendAndClose(&pb.HelloResponse{
-				Reply: reply,
-			})
-		}
-		if err != nil {
+		if res == nil {
 			return err
 		}
-		reply += res.GetName()
-		fmt.Println("res: ", res.GetName())
+		if err != nil {
+			log.Fatalln("failed to recv:", err)
+			return err
+		}
+		// 对收到的数据做些处理
+		fmt.Println(res.GetName())
+		reply := aimodel(res.GetName())
+		// 返回流式响应
+		if err := stream.Send(&pb.HelloResponse{Reply: reply}); err != nil {
+			return err
+		}
 	}
 }
 
