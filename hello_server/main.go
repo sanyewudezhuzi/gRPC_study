@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
-	"strings"
+	"strconv"
+	"time"
 
 	"github.com/sanyewudezhuzi/gRPC_study/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // hello_server
@@ -16,33 +22,66 @@ type server struct {
 	pb.UnimplementedGreeterServer
 }
 
-// 从隔壁大佬偷的价值连城的 AI 模型
-func aimodel(s string) string {
-	s = strings.ReplaceAll(s, "吗", "")
-	s = strings.ReplaceAll(s, "吧", "")
-	s = strings.ReplaceAll(s, "你", "我")
-	s = strings.ReplaceAll(s, "？", "!")
-	s = strings.ReplaceAll(s, "?", "!")
-	return s
+var database = map[string]string{
+	"zhuzi": "abc123",
 }
 
-// BidiHello 双向流式打招呼
-func (s *server) BidiHello(stream pb.Greeter_BidiHelloServer) error {
+// normalCall 普通调用
+func (s *server) normalCall(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
+	// 设置 trailer
+	defer func() {
+		trailer := metadata.Pairs("timestamp", strconv.Itoa(int(time.Now().Unix())))
+		grpc.SetTrailer(ctx, trailer)
+	}()
+	// 获取 metadata
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
+	name := md["name"][0]
+	pwd := md["pwd"][0]
+	if p, ok := database[name]; ok && p == pwd {
+		fmt.Println("name:", name)
+	} else {
+		return nil, status.Error(codes.Unauthenticated, "invalid info")
+	}
+	// 发送 header
+	header := metadata.New(map[string]string{"greeting": name + " say: hello " + req.Name})
+	grpc.SendHeader(ctx, header)
+	return &pb.HelloResponse{Reply: req.Name}, nil
+}
+
+// streamCalls 流式调用
+func (s server) streamCalls(stream pb.Greeter_BidiHelloServer) error {
+	// 设置 trailer
+	defer func() {
+		trailer := metadata.Pairs("timestamp", strconv.Itoa(int(time.Now().Unix())))
+		stream.SetTrailer(trailer)
+	}()
+	// 获取 metadata
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if !ok {
+		return status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
+	name := md["name"][0]
+	pwd := md["pwd"][0]
+	if p, ok := database[name]; ok && p == pwd {
+		fmt.Println("name:", name)
+	} else {
+		return status.Error(codes.Unauthenticated, "invalid info")
+	}
+	// 发送数据
 	for {
-		// 接收流式请求
 		res, err := stream.Recv()
-		if res == nil {
-			return err
+		if err == io.EOF {
+			return nil
 		}
 		if err != nil {
 			log.Fatalln("failed to recv:", err)
 			return err
 		}
-		// 对收到的数据做些处理
-		fmt.Println(res.GetName())
-		reply := aimodel(res.GetName())
-		// 返回流式响应
-		if err := stream.Send(&pb.HelloResponse{Reply: reply}); err != nil {
+		fmt.Println("get name: ", res.GetName())
+		if err := stream.Send(&pb.HelloResponse{Reply: name + "say: hello " + res.Name}); err != nil {
 			return err
 		}
 	}
